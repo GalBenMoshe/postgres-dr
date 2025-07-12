@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-conf
+  namespace: postgres
+data:
+  postgresql.conf: |
+    # Base config
+    listen_addresses = '*'
+    port = 5432
+    max_connections = 100
+    shared_buffers = '128MB'
+
+    # WAL archiving and replication
+    wal_level = replica
+    archive_mode = on
+    archive_command = 'cp %p /var/lib/postgresql/wal_archive/%f'
+    max_wal_senders = 5
+    wal_keep_size = 64    # or wal_keep_segments in older versions
+    hot_standby = on
+
+    # Logging (optional but useful for troubleshooting)
+    logging_collector = on
+    log_directory = 'log'
+    log_filename = 'postgresql-%Y-%m-%d.log'
+    log_statement = 'none'
+
+    # Recovery settings (only used during restore, add manually if needed)
+    # restore_command = 'cp /path/to/archive/%f %p'

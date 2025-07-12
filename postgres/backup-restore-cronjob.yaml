@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pg-backup-restore
+  namespace: postgres
+spec:
+  schedule: "*/1 * * * *"
+  successfulJobsHistoryLimit: 1 
+  failedJobsHistoryLimit: 1  
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: pg-backup-restore
+            image: postgres:16
+            env:
+            - name: PGPASSWORD
+              value: SecurePassword
+            command:
+            - /bin/sh
+            - -c
+            - |
+              echo "[`date`] Starting backup..."
+              pg_dump -h postgres -U ps_user -d ps_db > /tmp/backup.sql
+              echo "[`date`] Backup complete. Cleaning target database..."
+              psql -h postgres-dr -U ps_user -d ps_db -c "TRUNCATE TABLE users CASCADE;"
+              echo "[`date`] Starting restore..."
+              psql -h postgres-dr -U ps_user -d ps_db < /tmp/backup.sql
+              echo "[`date`] Restore complete."
+
+          restartPolicy: OnFailure
